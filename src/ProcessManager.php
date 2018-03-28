@@ -10,10 +10,14 @@ class ProcessManager
 {
     /**
      * @param Process[] $processes
-     * @param int $maxParallel
-     * @param int $poll
+     * @param int       $maxParallel Max parallel processes to run
+     * @param int       $poll Poll time in microseconds
+     * @param callable  $callback Callablle which takes 3 arguments :
+     * - type of output (out or err)
+     * - some bytes from the output in real-time
+     * - the process itself being ran
      */
-    public function runParallel(array $processes, $maxParallel, $poll = 1000)
+    public function runParallel(array $processes, $maxParallel, $poll = 1000, callable $callback = null)
     {
         $this->validateProcesses($processes);
 
@@ -29,7 +33,11 @@ class ProcessManager
 
         // start the initial stack of processes
         foreach ($currentProcesses as $process) {
-            $process->start();
+            $process->start(function ($type, $buffer) use ($callback, $process) {
+                if (null !== $callback && is_callable($callback)) {
+                    $callback($type, $buffer, $process);
+                }
+            });
         }
 
         do {
@@ -44,7 +52,11 @@ class ProcessManager
                     // directly add and start new process after the previous finished
                     if (count($processesQueue) > 0) {
                         $nextProcess = array_shift($processesQueue);
-                        $nextProcess->start();
+                        $nextProcess->start(function ($type, $buffer) use ($callback, $nextProcess) {
+                            if (null !== $callback && is_callable($callback)) {
+                                $callback($type, $buffer, $nextProcess);
+                            }
+                        });
                         $currentProcesses[] = $nextProcess;
                     }
                 }
@@ -59,12 +71,15 @@ class ProcessManager
     protected function validateProcesses(array $processes)
     {
         if (empty($processes)) {
-            throw new \InvalidArgumentException('Can not run in parallel 0 commands');
+            throw new \InvalidArgumentException('Cannot run in parallel 0 commands');
         }
 
         foreach ($processes as $process) {
             if (!($process instanceof Process)) {
-                throw new \InvalidArgumentException('Process in array need to be instance of Symfony Process');
+                throw new \InvalidArgumentException(sprintf(
+                    'Process in array need to be instance of Symfony Process, %s given',
+                    get_class($process)
+                ));
             }
         }
     }

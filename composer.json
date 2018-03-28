@@ -1,5 +1,5 @@
 {
-    "name": "jagandecapri/symfony-parallel-process",
+    "name": "kissifrot/symfony-parallel-process",
     "type": "library",
     "description": "Simple wrapper to enable parallel processing using Symfony Process component",
     "keywords": [
@@ -8,7 +8,7 @@
         "parallel processing",
         "symfony"
     ],
-    "homepage": "https://github.com/jagandecapri/symfony-parallel-process",
+    "homepage": "https://github.com/kissifrot/symfony-parallel-process",
     "license": "MIT",
     "authors": [
         {
@@ -19,6 +19,11 @@
             "name": "Oliver Eglseder",
             "email": "php@vxvr.de",
             "homepage": "http://vxvr.de",
+            "role": "Contributor"
+        },
+        {
+            "name": "Philippe Villiers",
+            "email": "kissifrot+gh@gmail.com",
             "role": "Contributor"
         }
     ],
