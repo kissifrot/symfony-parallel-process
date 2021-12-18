@@ -9,15 +9,15 @@ use Symfony\Component\Process\Process;
 class ProcessManager
 {
     /**
-     * @param Process[] $processes
-     * @param int       $maxParallel Max parallel processes to run
-     * @param int       $poll Poll time in microseconds
-     * @param callable  $callback Callablle which takes 3 arguments :
+     * @param Process[]      $processes
+     * @param int            $maxParallel Max parallel processes to run
+     * @param int            $poll Poll time in microseconds
+     * @param callable|null  $callback Callable which takes 3 arguments :
      * - type of output (out or err)
      * - some bytes from the output in real-time
-     * - the process itself being ran
+     * - the process itself being run
      */
-    public function runParallel(array $processes, $maxParallel, $poll = 1000, callable $callback = null)
+    public function runParallel(array $processes, int $maxParallel, int $poll = 1000, callable $callback = null): void
     {
         $this->validateProcesses($processes);
 
@@ -68,7 +68,7 @@ class ProcessManager
     /**
      * @param Process[] $processes
      */
-    protected function validateProcesses(array $processes)
+    protected function validateProcesses(array $processes): void
     {
         if (empty($processes)) {
             throw new \InvalidArgumentException('Cannot run in parallel 0 commands');
