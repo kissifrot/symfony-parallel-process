@@ -4,11 +4,11 @@ A simple wrapper to enable parallel processing using [Symfony Process](http://sy
 
 Fork of [jagandecapri/symfony-parallel-process](https://github.com/jagandecapri/symfony-parallel-process)
 
-##Installation
+## Installation
 
 `composer require kissifrot/symfony-parallel-process`
 
-##Example
+## Example
 
 ```php
 <?php
