@@ -8,62 +8,66 @@ use Symfony\Component\Process\Process;
  */
 class ProcessManager
 {
-    /**
-     * @param Process[]      $processes
-     * @param int            $maxParallel Max parallel processes to run
-     * @param int            $poll Poll time in microseconds
-     * @param callable|null  $callback Callable which takes 3 arguments :
-     * - type of output (out or err)
-     * - some bytes from the output in real-time
-     * - the process itself being run
-     */
-    public function runParallel(array $processes, int $maxParallel, int $poll = 1000, callable $callback = null): void
-    {
-        $this->validateProcesses($processes);
+	/**
+	 * @param Process[]      $processes
+	 * @param int            $maxParallel Max parallel processes to run
+	 * @param int            $poll Poll time in microseconds
+	 * @param callable|null  $outputCallback Callable which takes 3 arguments :
+	 * - type of output (out or err)
+	 * - some bytes from the output in real-time
+	 * - the process itself being run
+	 * @param callable|null $checkCallback Callable which takes no arguments and is invoked whenever we poll the process running
+	 */
+	public function runParallel(array $processes, int $maxParallel, int $poll = 1000, callable $outputCallback = null, callable $checkCallback = null): void
+	{
+		$this->validateProcesses($processes);
 
-        // do not modify the object pointers in the argument, copy to local working variable
-        $processesQueue = $processes;
+		// do not modify the object pointers in the argument, copy to local working variable
+		$processesQueue = $processes;
 
-        // fix maxParallel to be max the number of processes or positive
-        $maxParallel = min(abs($maxParallel), count($processesQueue));
+		// fix maxParallel to be max the number of processes or positive
+		$maxParallel = min(abs($maxParallel), count($processesQueue));
 
-        // get the first stack of processes to start at the same time
-        /** @var Process[] $currentProcesses */
-        $currentProcesses = array_splice($processesQueue, 0, $maxParallel);
+		// get the first stack of processes to start at the same time
+		/** @var Process[] $currentProcesses */
+		$currentProcesses = array_splice($processesQueue, 0, $maxParallel);
 
-        // start the initial stack of processes
-        foreach ($currentProcesses as $process) {
-            $process->start(function ($type, $buffer) use ($callback, $process) {
-                if (null !== $callback && is_callable($callback)) {
-                    $callback($type, $buffer, $process);
-                }
-            });
-        }
+		// start the initial stack of processes
+		foreach ($currentProcesses as $process) {
+			$process->start(function ($type, $buffer) use ($outputCallback, $process) {
+				if ( null !== $outputCallback && is_callable($outputCallback)) {
+					$outputCallback($type, $buffer, $process);
+				}
+			});
+		}
 
-        do {
-            // wait for the given time
-            usleep($poll);
+		do {
+			// wait for the given time
+			usleep($poll);
 
-            // remove all finished processes from the stack
-            foreach ($currentProcesses as $index => $process) {
-                if (!$process->isRunning()) {
-                    unset($currentProcesses[$index]);
+			// remove all finished processes from the stack
+			foreach ($currentProcesses as $index => $process) {
+				if (!$process->isRunning()) {
+					unset($currentProcesses[$index]);
 
-                    // directly add and start new process after the previous finished
-                    if (count($processesQueue) > 0) {
-                        $nextProcess = array_shift($processesQueue);
-                        $nextProcess->start(function ($type, $buffer) use ($callback, $nextProcess) {
-                            if (null !== $callback && is_callable($callback)) {
-                                $callback($type, $buffer, $nextProcess);
-                            }
-                        });
-                        $currentProcesses[] = $nextProcess;
-                    }
-                }
-            }
-            // continue loop while there are processes being executed or waiting for execution
-        } while (count($processesQueue) > 0 || count($currentProcesses) > 0);
-    }
+					// directly add and start new process after the previous finished
+					if (count($processesQueue) > 0) {
+						$nextProcess = array_shift($processesQueue);
+						$nextProcess->start(function ($type, $buffer) use ($outputCallback, $nextProcess) {
+							if ( null !== $outputCallback && is_callable($outputCallback)) {
+								$outputCallback($type, $buffer, $nextProcess);
+							}
+						});
+						$currentProcesses[] = $nextProcess;
+					}
+				}
+			}
+			if ( null !== $checkCallback && is_callable($checkCallback)) {
+				$checkCallback();
+			}
+			// continue loop while there are processes being executed or waiting for execution
+		} while (count($processesQueue) > 0 || count($currentProcesses) > 0);
+	}
 
     /**
      * @param Process[] $processes
