@@ -17,8 +17,9 @@ class ProcessManager
      * - some bytes from the output in real-time
      * - the process itself being run
      * @param callable|null $checkCallback Callable which takes no arguments and is invoked whenever we poll the process running
+     * @param callable|null $finishCallback Callable which is invoked when a Process finishes. Takes the Process as argument.
      */
-    public function runParallel(array $processes, int $maxParallel, int $poll = 1000, callable $callback = null, callable $checkCallback = null): void
+    public function runParallel(array $processes, int $maxParallel, int $poll = 1000, callable $callback = null, callable $checkCallback = null, callable $finishCallback = null): void
     {
         $this->validateProcesses($processes);
 
@@ -48,6 +49,9 @@ class ProcessManager
             // remove all finished processes from the stack
             foreach ($currentProcesses as $index => $process) {
                 if (!$process->isRunning()) {
+                    if (null !== $finishCallback && is_callable($finishCallback)) {
+                        $finishCallback($process);
+                    }
                     unset($currentProcesses[$index]);
 
                     // directly add and start new process after the previous finished
