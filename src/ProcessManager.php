@@ -16,7 +16,7 @@ class ProcessManager
      * - type of output (out or err)
      * - some bytes from the output in real-time
      * - the process itself being run
-     * @param callable|null $pollCallback Callable which takes no arguments and is invoked whenever we poll the process running
+     * @param callable|null $pollCallback Callable which takes no arguments and is invoked whenever we poll the processes running
      * @param callable|null $startCallback Callable which is invoked when a Process starts. Takes the Process as argument.
      * @param callable|null $finishCallback Callable which is invoked when a Process finishes. Takes the Process as argument.
      */
