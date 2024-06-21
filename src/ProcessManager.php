@@ -12,12 +12,15 @@ class ProcessManager
      * @param Process[]      $processes
      * @param int            $maxParallel Max parallel processes to run
      * @param int            $poll Poll time in microseconds
-     * @param callable|null  $callback Callable which takes 3 arguments :
+     * @param callable|null  $outputCallback Callable which takes 3 arguments :
      * - type of output (out or err)
      * - some bytes from the output in real-time
      * - the process itself being run
+     * @param callable|null $pollCallback Callable which takes no arguments and is invoked whenever we poll the processes running
+     * @param callable|null $startCallback Callable which is invoked when a Process starts. Takes the Process as argument.
+     * @param callable|null $finishCallback Callable which is invoked when a Process finishes. Takes the Process as argument.
      */
-    public function runParallel(array $processes, int $maxParallel, int $poll = 1000, callable $callback = null): void
+    public function runParallel(array $processes, int $maxParallel, int $poll = 1000, callable $outputCallback = null, callable $pollCallback = null, callable $startCallback = null, callable $finishCallback = null): void
     {
         $this->validateProcesses($processes);
 
@@ -33,11 +36,14 @@ class ProcessManager
 
         // start the initial stack of processes
         foreach ($currentProcesses as $process) {
-            $process->start(function ($type, $buffer) use ($callback, $process) {
-                if (null !== $callback && is_callable($callback)) {
-                    $callback($type, $buffer, $process);
+            $process->start(function ($type, $buffer) use ($outputCallback, $process) {
+                if (null !== $outputCallback && is_callable($outputCallback)) {
+                    $outputCallback($type, $buffer, $process);
                 }
             });
+            if (null !== $startCallback && is_callable($startCallback)) {
+                $startCallback($process);
+            }
         }
 
         do {
@@ -47,19 +53,28 @@ class ProcessManager
             // remove all finished processes from the stack
             foreach ($currentProcesses as $index => $process) {
                 if (!$process->isRunning()) {
+                    if (null !== $finishCallback && is_callable($finishCallback)) {
+                        $finishCallback($process);
+                    }
                     unset($currentProcesses[$index]);
 
                     // directly add and start new process after the previous finished
                     if (count($processesQueue) > 0) {
                         $nextProcess = array_shift($processesQueue);
-                        $nextProcess->start(function ($type, $buffer) use ($callback, $nextProcess) {
-                            if (null !== $callback && is_callable($callback)) {
-                                $callback($type, $buffer, $nextProcess);
+                        $nextProcess->start(function ($type, $buffer) use ($outputCallback, $nextProcess) {
+                            if (null !== $outputCallback && is_callable($outputCallback)) {
+                                $outputCallback($type, $buffer, $nextProcess);
                             }
                         });
                         $currentProcesses[] = $nextProcess;
+                        if (null !== $startCallback && is_callable($startCallback)) {
+                            $startCallback($nextProcess);
+                        }
                     }
                 }
+            }
+            if (null !== $pollCallback && is_callable($pollCallback)) {
+                $pollCallback();
             }
             // continue loop while there are processes being executed or waiting for execution
         } while (count($processesQueue) > 0 || count($currentProcesses) > 0);
