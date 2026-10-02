@@ -4,6 +4,11 @@ A simple wrapper to enable parallel processing using [Symfony Process](http://sy
 
 Fork of [jagandecapri/symfony-parallel-process](https://github.com/jagandecapri/symfony-parallel-process)
 
+## Requirements
+
+- PHP 8.2+
+- Symfony Process 7.4 or 8.x (Symfony 8 requires PHP 8.4+)
+
 ## Installation
 
 `composer require kissifrot/symfony-parallel-process`
@@ -16,8 +21,8 @@ Fork of [jagandecapri/symfony-parallel-process](https://github.com/jagandecapri/
 use Symfony\Component\Process\Process;
 use Jack\Symfony\ProcessManager;
 
-$proc1 = new Process('ls -l');
-$proc2 = new Process('ls -l');
+$proc1 = new Process(['ls', '-l']);
+$proc2 = new Process(['ls', '-l']);
 
 $proc_mgr = new ProcessManager();
 
