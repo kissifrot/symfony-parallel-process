@@ -17,7 +17,7 @@ class ProcessManager
      * - some bytes from the output in real-time
      * - the process itself being run
      */
-    public function runParallel(array $processes, int $maxParallel, int $poll = 1000, callable $callback = null): void
+    public function runParallel(array $processes, int $maxParallel, int $poll = 1000, ?callable $callback = null): void
     {
         $this->validateProcesses($processes);
 
@@ -78,7 +78,7 @@ class ProcessManager
             if (!($process instanceof Process)) {
                 throw new \InvalidArgumentException(sprintf(
                     'Process in array need to be instance of Symfony Process, %s given',
-                    get_class($process)
+                    get_debug_type($process)
                 ));
             }
         }

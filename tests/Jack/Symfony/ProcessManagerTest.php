@@ -39,4 +39,21 @@ class ProcessManagerTest extends TestCase
         $this->assertEquals('bar' . PHP_EOL, $processes[1]->getOutput());
         $this->assertEquals('Hello World', $processes[2]->getOutput());
     }
+
+    public function testRunParallelWithCallback(): void
+    {
+        $processes = array(
+            new Process(['echo', 'foo']),
+            new Process(['echo', 'bar']),
+        );
+        $calls = array();
+        $this->processManager->runParallel($processes, 1, 1000, function ($type, $buffer, $process) use (&$calls) {
+            $calls[] = array($type, $buffer, $process);
+        });
+
+        $this->assertSame(array(
+            array(Process::OUT, 'foo' . PHP_EOL, $processes[0]),
+            array(Process::OUT, 'bar' . PHP_EOL, $processes[1]),
+        ), $calls);
+    }
 }
